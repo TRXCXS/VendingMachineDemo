@@ -1,6 +1,7 @@
 package utils;
 
 import entity.Layer;
+import entity.RecognitionItem;
 import entity.RecognitionResult;
 import entity.Stock;
 import exception.ExceptionEnum;
@@ -11,24 +12,119 @@ import java.util.HashMap;
 import java.util.List;
 
 public class PurchaseUtils {
-    public static RecognitionResult WeightIdentification(List<Layer> beforePurchase, List<Layer> afterPurchase, List<Stock> stocks) {
+    /**
+     * 获取消费者的购物清单
+     *
+     * @param beforePurchase
+     * @param afterPurchase
+     * @param stocks
+     * @param goodsMap
+     * @return
+     */
+    public static RecognitionResult WeightIdentification(List<Layer> beforePurchase, List<Layer> afterPurchase, List<Stock> stocks, HashMap<String, Integer> goodsMap) {
         RecognitionResult recognitionResult = new RecognitionResult();
-        HashMap<String, Integer> goodsMap = new HashMap<>();
+        HashMap<String, Integer> purchasedGoodsMap = new HashMap<>();
         List<RecognitionException> exceptions = new ArrayList<>();
+        SortUtils.sortLayersByIndex(beforePurchase);
+        SortUtils.sortLayersByIndex(afterPurchase);
 
         for (int i = 0; i < beforePurchase.size(); i++) {
             Layer before = beforePurchase.get(i);
             Layer after = afterPurchase.get(i);
 
+            // 如果重量相等，说明没有购买
             if (before.getWeight() == after.getWeight()) {
                 continue;
             }
 
-            if (before.getWeight() < after.getWeight()) {
-                exceptions.add(new RecognitionException(i, before.getWeight(), after.getWeight(), ExceptionEnum.FOREIGN_OBJECT_EXCEPTION));
+            try {
+                if (hasSensorException(beforePurchase, afterPurchase, stocks, i + 1, goodsMap)) {
+                    RecognitionException exception = new RecognitionException(i + 1, before.getWeight(), after.getWeight(), ExceptionEnum.SENSOR_EXCEPTION);
+                    exceptions.add(exception);
+                    throw exception;
+                }
+                if (before.getWeight() < after.getWeight()) {
+                    RecognitionException exception = new RecognitionException(i + 1, before.getWeight(), after.getWeight(), ExceptionEnum.FOREIGN_OBJECT_EXCEPTION);
+                    exceptions.add(exception);
+                    throw exception;
+                }
+                // todo 识别商品组合
+            } catch (RecognitionException ignored) {
+
             }
         }
 
-        return null;
+        if (!exceptions.isEmpty()) {
+            recognitionResult.setSuccessful(false);
+        } else {
+            recognitionResult.setSuccessful(true);
+        }
+        List<RecognitionItem> items = new ArrayList<>();
+        for (String goodsId : purchasedGoodsMap.keySet()) {
+            RecognitionItem item = new RecognitionItem(goodsId, purchasedGoodsMap.get(goodsId));
+            items.add(item);
+        }
+        recognitionResult.setItems(items);
+        recognitionResult.setExceptions(exceptions);
+        return recognitionResult;
+    }
+
+    /**
+     * 获取某一层的商品清单，由商品ID和商品数量组成的map
+     *
+     * @param stocks
+     * @param layerNumber
+     * @return
+     */
+    public static HashMap<String, Integer> getGoodsOfLayer(List<Stock> stocks, int layerNumber) {
+        HashMap<String, Integer> goods = new HashMap<>();
+        for (Stock stock : stocks) {
+            if (stock.getLayer() == layerNumber) {
+                goods.put(stock.getGoodsId(), stock.getNum());
+            }
+        }
+        return goods;
+    }
+
+    /**
+     * 获取某一层的商品重量范围
+     *
+     * @param stocks
+     * @param layerNumber
+     * @param goodsMap
+     * @return
+     */
+    public static HashMap<String, Integer> getValidWeightOfLayer(List<Stock> stocks, int layerNumber, HashMap<String, Integer> goodsMap) {
+        int maxStartWeight = 0, minStartWeight = 0, maxEndWeight = 0, minEndWeight = 0;
+        HashMap<String, Integer> validWeight = new HashMap<>();
+
+        // goods是商品ID和商品数量组成的map，goodsMap是商品ID和商品重量组成的map
+        HashMap<String, Integer> goods = getGoodsOfLayer(stocks, layerNumber);
+        for (String goodsId : goods.keySet()) {
+            maxStartWeight += goods.get(goodsId) * goodsMap.get(goodsId);
+        }
+        maxEndWeight = maxStartWeight;
+
+        validWeight.put("maxStartWeight", maxStartWeight);
+        validWeight.put("minStartWeight", minStartWeight);
+        validWeight.put("maxEndWeight", maxEndWeight);
+        validWeight.put("minEndWeight", minEndWeight);
+        return validWeight;
+    }
+
+    /**
+     * 判断某一层是否存在传感器异常
+     *
+     * @param beforePurchase
+     * @param afterPurchase
+     * @param stocks
+     * @param layerNumber
+     * @param goodsMap
+     * @return
+     */
+    public static boolean hasSensorException(List<Layer> beforePurchase, List<Layer> afterPurchase, List<Stock> stocks, int layerNumber, HashMap<String, Integer> goodsMap) {
+        HashMap<String, Integer> validWeight = getValidWeightOfLayer(stocks, layerNumber, goodsMap);
+        int maxStartWeight = validWeight.get("maxStartWeight"), minStartWeight = validWeight.get("minStartWeight"), maxEndWeight = validWeight.get("maxEndWeight"), minEndWeight = validWeight.get("minEndWeight"), beforePurchaseWeight = beforePurchase.get(layerNumber - 1).getWeight(), afterPurchaseWeight = afterPurchase.get(layerNumber - 1).getWeight();
+        return beforePurchaseWeight < minStartWeight || beforePurchaseWeight > maxStartWeight || afterPurchaseWeight < minEndWeight || afterPurchaseWeight > maxEndWeight;
     }
 }

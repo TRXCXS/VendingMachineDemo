@@ -9,6 +9,7 @@ import utils.SortUtils;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @SpringBootTest
 class VendingMachineDemoApplicationTests {
@@ -49,15 +50,20 @@ class VendingMachineDemoApplicationTests {
         */
 
         HashMap<String, Integer> goodsMap = new HashMap<>();
-        goodsMap.put("000001", 10);
-        goodsMap.put("000002", 30);
-        goodsMap.put("000003", 50);
-        goodsMap.put("000004", 100);
-        goodsMap.put("000005", 250);
-        goodsMap.put("000006", 300);
-        goodsMap.put("000007", 500);
-        goodsMap.put("000008", 600);
-        goodsMap.put("000009", 800);
-        goodsMap.put("000010", 1000);
+        goodsMap.put("000001", 50);
+        goodsMap.put("000002", 100);
+        goodsMap.put("000003", 250);
+        goodsMap.put("000004", 300);
+        goodsMap.put("000005", 500);
+        goodsMap.put("000006", 600);
+        goodsMap.put("000007", 750);
+        goodsMap.put("000008", 1000);
+        goodsMap.put("000009", 1200);
+        goodsMap.put("000010", 1500);
+
+        List<Map.Entry<String, Integer>> list = SortUtils.sortGoodsMapByWeight(goodsMap);
+        for (Map.Entry<String, Integer> goodsItem : list) {
+            System.out.println(goodsItem);
+        }
     }
 }

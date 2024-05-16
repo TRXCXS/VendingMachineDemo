@@ -94,21 +94,19 @@ public class PurchaseUtils {
      * @param goodsMap
      * @return
      */
-    public static HashMap<String, Integer> getValidWeightOfLayer(List<Stock> stocks, int layerNumber, HashMap<String, Integer> goodsMap) {
-        int maxStartWeight = 0, minStartWeight = 0, maxEndWeight = 0, minEndWeight = 0;
-        HashMap<String, Integer> validWeight = new HashMap<>();
+    public static int[] getValidWeightOfLayer(List<Stock> stocks, int layerNumber, HashMap<String, Integer> goodsMap) {
+        int maxStartWeight = 0, minStartWeight = 0, minEndWeight = 0;
+        int[] validWeight = new int[3];
 
         // goods是商品ID和商品数量组成的map，goodsMap是商品ID和商品重量组成的map
         HashMap<String, Integer> goods = getGoodsOfLayer(stocks, layerNumber);
         for (String goodsId : goods.keySet()) {
             maxStartWeight += goods.get(goodsId) * goodsMap.get(goodsId);
         }
-        maxEndWeight = maxStartWeight;
 
-        validWeight.put("maxStartWeight", maxStartWeight);
-        validWeight.put("minStartWeight", minStartWeight);
-        validWeight.put("maxEndWeight", maxEndWeight);
-        validWeight.put("minEndWeight", minEndWeight);
+        validWeight[0] = maxStartWeight;
+        validWeight[1] = minStartWeight;
+        validWeight[2] = minEndWeight;
         return validWeight;
     }
 
@@ -123,8 +121,8 @@ public class PurchaseUtils {
      * @return
      */
     public static boolean hasSensorException(List<Layer> beforePurchase, List<Layer> afterPurchase, List<Stock> stocks, int layerNumber, HashMap<String, Integer> goodsMap) {
-        HashMap<String, Integer> validWeight = getValidWeightOfLayer(stocks, layerNumber, goodsMap);
-        int maxStartWeight = validWeight.get("maxStartWeight"), minStartWeight = validWeight.get("minStartWeight"), maxEndWeight = validWeight.get("maxEndWeight"), minEndWeight = validWeight.get("minEndWeight"), beforePurchaseWeight = beforePurchase.get(layerNumber - 1).getWeight(), afterPurchaseWeight = afterPurchase.get(layerNumber - 1).getWeight();
-        return beforePurchaseWeight < minStartWeight || beforePurchaseWeight > maxStartWeight || afterPurchaseWeight < minEndWeight || afterPurchaseWeight > maxEndWeight;
+        int[] validWeight = getValidWeightOfLayer(stocks, layerNumber, goodsMap);
+        int maxStartWeight = validWeight[0], minStartWeight = validWeight[1], minEndWeight = validWeight[2], beforePurchaseWeight = beforePurchase.get(layerNumber - 1).getWeight(), afterPurchaseWeight = afterPurchase.get(layerNumber - 1).getWeight();
+        return beforePurchaseWeight < minStartWeight || beforePurchaseWeight > maxStartWeight || afterPurchaseWeight < minEndWeight;
     }
 }

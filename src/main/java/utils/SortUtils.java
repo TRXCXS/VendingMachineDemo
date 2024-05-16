@@ -1,6 +1,7 @@
 package utils;
 
 import entity.Layer;
+import entity.RecognitionItem;
 
 import java.util.*;
 
@@ -13,5 +14,9 @@ public class SortUtils {
         List<Map.Entry<String, Integer>> list = new ArrayList<>(goodsMap.entrySet());
         list.sort(Map.Entry.comparingByValue(Comparator.reverseOrder()));
         return list;
+    }
+
+    public static void sortListByGoodsId(List<RecognitionItem> items) {
+        items.sort(Comparator.comparing(RecognitionItem::getGoodsId));
     }
 }

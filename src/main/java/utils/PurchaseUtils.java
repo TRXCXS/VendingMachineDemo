@@ -72,6 +72,7 @@ public class PurchaseUtils {
             RecognitionItem item = new RecognitionItem(goodsId, purchasedGoodsMap.get(goodsId));
             items.add(item);
         }
+        SortUtils.sortListByGoodsId(items);
         recognitionResult.setItems(items);
         recognitionResult.setExceptions(exceptions);
         return recognitionResult;
@@ -174,7 +175,7 @@ public class PurchaseUtils {
             Map.Entry<String, Integer> goodsItem = goodsList.get(i);
             String goodsId = goodsItem.getKey();
             int goodsWeight = goodsItem.getValue();
-            int goodsNumber = goods.get(goodsId);
+            int goodsNumber = goods.getOrDefault(goodsId, 0);
 
             if (goodsWeight > weightDifference || goodsNumber == 0) {
                 // 跳过重量超过剩余重量差或数量为零的商品
@@ -221,7 +222,7 @@ public class PurchaseUtils {
             Map.Entry<String, Integer> goodsItem = goodsList.get(i);
             String goodsId = goodsItem.getKey();
             int goodsWeight = goodsItem.getValue();
-            int goodsNumber = goods.get(goodsId);
+            int goodsNumber = goods.getOrDefault(goodsId, 0);
 
             if (goodsWeight > weightDifference || goodsNumber == 0) {
                 // 跳过重量超过剩余重量差或数量为零的商品
